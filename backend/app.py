@@ -7,7 +7,6 @@ from flask import Flask, jsonify, send_from_directory, request
 from datetime import datetime, timedelta
 import os
 
-# Get the absolute path to the frontend directory
 frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
 static_dir = os.path.join(frontend_dir, 'static')
 
@@ -39,7 +38,7 @@ def make_api_request(url):
             "message": str(e)
         }, 500
 
-# Sample data for development/testing
+# Sample data for testing
 SAMPLE_DATA = {
     "agencies": [
         {

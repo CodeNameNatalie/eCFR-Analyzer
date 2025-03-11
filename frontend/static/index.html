@@ -3,17 +3,39 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="eCFR Analyzer Dashboard - Visualize and analyze Electronic Code of Federal Regulations data">
   <title>eCFR Analyzer</title>
+  
+  <!-- External Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
   <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
   <style>
+    /* Base Styles */
     body { 
-      font-family: Arial, sans-serif; 
-      margin: 20px; 
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
       background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.5;
     }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      color: #444;
+      margin-top: 0;
+      font-size: 1.25rem;
+    }
+
+    /* Layout */
     .dashboard {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -21,63 +43,70 @@
       margin: 20px auto;
       max-width: 1400px;
     }
+
     .chart-container {
       background: white;
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    h1 {
-      text-align: center;
-      color: #333;
+
+    .chart-container.hierarchy,
+    .chart-container:last-child {
+      grid-column: span 2;
+      overflow: hidden;
     }
-    h2 {
-      color: #444;
-      margin-top: 0;
-    }
+
+    /* Agency Hierarchy */
     #agency-hierarchy {
       width: 100%;
       height: 800px;
       overflow: auto;
-      background: white;
       padding: 20px;
     }
+
     .agency-list {
       list-style: none;
       padding-left: 0;
       margin: 0;
-      font-family: Arial, sans-serif;
     }
+
     .agency-list ul {
       list-style: none;
       padding-left: 24px;
       margin: 0;
     }
+
     .agency-item {
       margin: 4px 0;
       padding: 8px;
       border-radius: 4px;
       transition: background-color 0.2s;
     }
+
     .agency-item:hover {
       background-color: #f5f5f5;
     }
+
     .agency-header {
       display: flex;
       align-items: center;
       gap: 8px;
       cursor: pointer;
     }
+
     .agency-name {
       font-size: 14px;
-      color: #333;
       flex: 1;
     }
+
     .agency-titles {
       font-size: 12px;
       color: #666;
       margin-left: 32px;
     }
+
+    /* Controls */
     .toggle-btn {
       width: 16px;
       height: 16px;
@@ -92,79 +121,50 @@
       color: #666;
       transition: all 0.2s;
     }
+
     .toggle-btn:hover {
       background: #f0f0f0;
       border-color: #999;
     }
+
     .toggle-btn.leaf {
       visibility: hidden;
     }
+
     .agency-search {
-      margin-bottom: 16px;
       width: 100%;
       padding: 8px;
+      margin-bottom: 16px;
       border: 1px solid #ddd;
       border-radius: 4px;
       font-size: 14px;
     }
+
     .agency-search:focus {
       outline: none;
       border-color: #69b3a2;
       box-shadow: 0 0 0 2px rgba(105, 179, 162, 0.1);
     }
-    .highlight {
-      background-color: #fff3cd;
-    }
-    .node text {
-      cursor: default;
-      font-size: 11px;
-      font-family: Arial;
-    }
-    .node-label {
-      fill: #333;
-    }
-    .node-sublabel {
-      fill: #666;
-      font-size: 9px;
-    }
-    .node circle {
-      cursor: pointer;
-      fill: #fff;
-      stroke: #69b3a2;
-      stroke-width: 1.5px;
-    }
-    .node:hover circle {
-      fill: #69b3a2;
-    }
-    .link {
-      fill: none;
-      stroke: #ccc;
-      stroke-width: 0.5px;
-      opacity: 0.4;
-    }
-    .text-background {
-      fill: white;
-      opacity: 0.9;
-    }
-    .chart-container.hierarchy,
-    .chart-container:last-child {
-      grid-column: span 2;
-      overflow: hidden;
-    }
+
+    /* Status Board */
     .status-board {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
       gap: 15px;
     }
+
     .status-card {
       background: white;
-      padding: 10px;
+      padding: 15px;
       border-radius: 4px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
+
     .processing {
       background-color: #fff3cd;
     }
+
+    /* API Message */
     .api-message {
       text-align: center;
       padding: 20px;
@@ -173,13 +173,32 @@
       border-radius: 4px;
       margin: 10px 0;
     }
+
     .api-message a {
       color: #0056b3;
       text-decoration: none;
-      font-weight: bold;
+      font-weight: 500;
     }
+
     .api-message a:hover {
       text-decoration: underline;
+    }
+
+    /* Utilities */
+    .highlight {
+      background-color: #fff3cd;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-container.hierarchy,
+      .chart-container:last-child {
+        grid-column: 1;
+      }
     }
   </style>
 </head>
