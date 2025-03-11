@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <title>eCFR Analyzer</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <style>
     body { 
@@ -191,6 +193,20 @@
     </div>
 
     <div class="chart-container">
+      <h2>Title Status Overview</h2>
+      <p style="text-align: center; color: #666; margin-bottom: 15px;">
+        Current status and update schedule for CFR titles
+      </p>
+      <div style="margin-bottom: 10px; display: flex; justify-content: center; gap: 20px;">
+        <span style="color: #666;"><span style="color: #4CAF50;">●</span> Up to Date</span>
+        <span style="color: #666;"><span style="color: #FFC107;">●</span> Processing</span>
+        <span style="color: #666;"><span style="color: #2196F3;">●</span> Scheduled Update</span>
+        <span style="color: #666;"><span style="color: #F44336;">●</span> Needs Update</span>
+      </div>
+      <canvas id="titleComplexityChart"></canvas>
+    </div>
+
+    <div class="chart-container">
       <h2>Historical Regulation Updates</h2>
       <canvas id="historicalChart"></canvas>
     </div>
@@ -274,6 +290,145 @@
             }
           }
         });
+
+        // Title Analysis
+        fetch('/api/title_status')
+          .then(response => response.json())
+          .then(titleData => {
+            // Process the title data
+            const processedData = titleData
+              .filter(title => title && title.number)
+              .map(title => {
+                const amendmentDate = title.latest_amendment ? new Date(title.latest_amendment) : null;
+                const upToDateAsOf = title.up_to_date_as_of ? new Date(title.up_to_date_as_of) : null;
+                const now = new Date();
+                
+                // Determine status
+                let status = 'up-to-date'; // default
+                if (title.processing) {
+                  status = 'processing';
+                } else if (amendmentDate && amendmentDate > now) {
+                  status = 'scheduled';
+                } else if (!upToDateAsOf || (now - upToDateAsOf) > (90 * 24 * 60 * 60 * 1000)) { // 90 days
+                  status = 'needs-update';
+                }
+
+                return {
+                  title: parseInt(title.number),
+                  name: title.name || 'Untitled',
+                  latestAmendment: amendmentDate,
+                  upToDate: upToDateAsOf,
+                  status: status
+                };
+              })
+              .sort((a, b) => a.title - b.title);
+
+            // Create the data points
+            const chartData = processedData.map(item => ({
+              x: item.title,
+              y: 1 // All points at same level
+            }));
+
+            const complexityCtx = document.getElementById('titleComplexityChart').getContext('2d');
+            new Chart(complexityCtx, {
+              type: 'scatter',
+              data: {
+                datasets: [{
+                  label: 'Title Status',
+                  data: chartData,
+                  backgroundColor: processedData.map(item => {
+                    switch(item.status) {
+                      case 'up-to-date': return 'rgba(76, 175, 80, 0.6)';  // Green
+                      case 'processing': return 'rgba(255, 193, 7, 0.6)';   // Yellow
+                      case 'scheduled': return 'rgba(33, 150, 243, 0.6)';   // Blue
+                      case 'needs-update': return 'rgba(244, 67, 54, 0.6)'; // Red
+                      default: return 'rgba(189, 189, 189, 0.6)';           // Gray
+                    }
+                  }),
+                  borderColor: processedData.map(item => {
+                    switch(item.status) {
+                      case 'up-to-date': return 'rgba(76, 175, 80, 1)';
+                      case 'processing': return 'rgba(255, 193, 7, 1)';
+                      case 'scheduled': return 'rgba(33, 150, 243, 1)';
+                      case 'needs-update': return 'rgba(244, 67, 54, 1)';
+                      default: return 'rgba(189, 189, 189, 1)';
+                    }
+                  }),
+                  pointRadius: 12,
+                  pointHoverRadius: 15
+                }]
+              },
+              options: {
+                responsive: true,
+                scales: {
+                  x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: {
+                      display: true,
+                      text: 'Title Number',
+                      font: {
+                        size: 14
+                      }
+                    },
+                    ticks: {
+                      stepSize: 1,
+                      font: {
+                        size: 12
+                      }
+                    },
+                    grid: {
+                      display: false
+                    }
+                  },
+                  y: {
+                    display: false,
+                    grid: {
+                      display: false
+                    }
+                  }
+                },
+                plugins: {
+                  tooltip: {
+                    callbacks: {
+                      label: function(context) {
+                        const item = processedData[context.dataIndex];
+                        let statusEmoji = {
+                          'up-to-date': '✓',
+                          'processing': '🔄',
+                          'scheduled': '📅',
+                          'needs-update': '⚠️'
+                        }[item.status];
+                        
+                        let amendmentInfo = item.latestAmendment ? 
+                          `Last Amended: ${item.latestAmendment.toLocaleDateString()}` :
+                          'No amendment history';
+                        
+                        let upToDateInfo = item.upToDate ?
+                          `Up to date as of: ${item.upToDate.toLocaleDateString()}` :
+                          'Update status unknown';
+
+                        return [
+                          `Title ${item.title}: ${item.name}`,
+                          amendmentInfo,
+                          upToDateInfo,
+                          `Status: ${statusEmoji} ${item.status.replace('-', ' ').toUpperCase()}`
+                        ];
+                      }
+                    }
+                  },
+                  legend: {
+                    display: false
+                  }
+                }
+              }
+            });
+          })
+          .catch(err => {
+            console.error("Error fetching or processing title data:", err);
+            const container = document.querySelector('.chart-container:nth-child(2)');
+            container.innerHTML += '<p style="color: red; text-align: center;">Error loading title data. Please check the console for details.</p>';
+          });
       })
       .catch(err => console.error("Error fetching word counts:", err));
 
