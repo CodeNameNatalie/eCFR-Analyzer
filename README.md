@@ -2,6 +2,8 @@
 
 A web application that analyzes the Electronic Code of Federal Regulations (eCFR) data using the official [eCFR API](https://www.ecfr.gov/). This tool provides visualizations of regulation data, including word counts per agency and historical changes tracking.
 
+![Ben Wyatt Meme](assets/meme.jpg)
+
 ## Features
 
 - **Agency Word Count Analysis**: Visualizes the volume of regulations by counting words per agency
@@ -83,15 +85,17 @@ Note: For full functionality, you may need to register your IP address with the 
 
 ```
 eCFR-Analyzer/
+├── assets/               # Static assets (images, etc.)
+│   └── meme.jpg     # README header image
 ├── backend/
-│   ├── app.py              # Flask application with API endpoints
-│   └── config.py           # Environment and application configuration
+│   ├── app.py           # Flask application with API endpoints
+│   └── config.py        # Environment and application configuration
 ├── frontend/
 │   └── static/
-│       └── index.html     # Main webpage with Chart.js from CDN
-├── requirements.txt        # Python dependencies
-├── .env.example           # Template for required environment variables
-└── README.md             # Project documentation
+│       └── index.html   # Main webpage with Chart.js from CDN
+├── requirements.txt      # Python dependencies
+├── .env.example         # Template for required environment variables
+└── README.md           # Project documentation
 ```
 
 ## API Endpoints
